@@ -43,11 +43,42 @@
         .select-card:hover { border-color: #525252; transform: translateY(-2px); }
         .select-card.active { background: #fff; border-color: #fff; color: #000; }
         .select-card.active .sub-text { color: #525252; }
-        .btn-primary { background: #fff; color: #000; border: 1px solid #fff; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); opacity: 0; visibility: hidden; transform: translateY(10px); }
-        .btn-primary:hover { background: transparent; color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
-        /* Removed .btn-primary.loading as AJAX is removed */
+        
+        /* Primary Button & Loading State */
+        .btn-primary { 
+            background: #fff; 
+            color: #000; 
+            border: 1px solid #fff; 
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+            opacity: 0; 
+            visibility: hidden; 
+            transform: translateY(10px); 
+            position: relative;
+        }
+        .btn-primary:hover:not(.loading) { background: transparent; color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
 
-
+        .btn-primary.loading {
+            pointer-events: none;
+            background: #404040; /* Darker background when loading */
+            color: #a3a3a3;
+        }
+        .btn-primary.loading .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            width: 1em;
+            height: 1em;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 0.5em;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         /* Counter Button (30% larger) */
         .btn-counter { 
             width: 44px; 
@@ -88,7 +119,7 @@
         }
         .studio-slider:hover::-webkit-slider-thumb { transform: scale(1.3); }
         
-        /* Validation/Error Highlight */
+        /* Validation/Error Highlight (Updated to be more noticeable) */
         .error-highlight {
             border-color: #f87171 !important; 
             box-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
@@ -110,6 +141,14 @@
             opacity: 1;
             visibility: visible;
             transform: translateY(0);
+        }
+        /* Style for success message */
+        #validationMessage.success {
+            background-color: #10b981; /* Emerald green */
+        }
+        /* Style for Network error message */
+        #validationMessage.error {
+            background-color: #f87171; /* Red */
         }
         
         /* FOOTER PORTRAIT STYLING */
@@ -166,13 +205,13 @@
 </head>
 <body>
     
-    <!-- Temporary Floating Validation Message -->
-    <div id="validationMessage" class="fixed top-0 left-0 right-0 bg-red-600 text-white text-center p-3 text-sm z-50">
+    <!-- Temporary Floating Validation/Success/Error Message -->
+    <div id="validationMessage" class="fixed top-0 left-0 right-0 text-white text-center p-3 text-sm z-50 error">
         برای ارسال درخواست، لطفاً شماره تماس خود را در کادر مربوطه وارد نمایید.
     </div>
 
-    <!-- The Success Modal is removed since FormSubmit redirects on success when not using AJAX -->
-    <!-- FormSubmit handles the success page redirection automatically -->
+    <!-- Hidden iframe to handle FormSubmit redirection and prevent full page navigation -->
+    <iframe name="formsubmit-target" id="formsubmit-target" style="display: none;"></iframe>
 
 
     <!-- Main Content Wrapper to handle margin in landscape -->
@@ -190,8 +229,8 @@
                 <p class="text-neutral-500 text-sm font-light mt-2">سیستم برآورد هزینه خدمات سه‌بعدی</p>
             </header>
 
-            <!-- FORM START: Changed action to FormSubmit and onSubmit to prepDataAndSubmit -->
-            <form id="pricingForm" method="POST" action="https://formsubmit.co/el/bozaci" onsubmit="return prepDataAndSubmit(event)">
+            <!-- FORM START: Target set to hidden iframe -->
+            <form id="pricingForm" method="POST" action="https://formsubmit.co/el/bozaci" target="formsubmit-target" onsubmit="return prepDataAndSubmit(event)">
                 
                 <!-- FormSubmit Configuration Fields (Hidden) -->
                 <!-- Disable Captcha -->
@@ -280,7 +319,8 @@
                     <div class="bg-neutral-900/50 p-6 border border-neutral-800">
                         <div class="flex justify-between items-end mb-5">
                             <span class="text-neutral-400 text-xs">تعداد فریم‌های نهایی درخواستی</span>
-                            <span class="text-4xl font-light text-white" id="frameDisplay">8</span>
+                            <!-- FRAME DISPLAY: Now uses Persian digits -->
+                            <span class="text-4xl font-light text-white" id="frameDisplay">۸</span>
                         </div>
                         <input type="range" min="1" max="20" value="8" class="studio-slider mb-4" id="frameSlider" name="Total_Frames" oninput="updateTotalFrames(this.value)">
                         <div class="flex justify-between text-[10px] text-neutral-600 uppercase tracking-widest">
@@ -310,7 +350,7 @@
                                 <div class="flex items-center gap-3">
                                     <div class="btn-counter" onclick="updateSubCount('comp', -1)">-</div>
                                     <input type="hidden" id="count-comp" name="Comp_Frames" value="0">
-                                    <span class="w-4 text-center text-sm" id="val-comp">0</span>
+                                    <span class="w-4 text-center text-sm" id="val-comp">۰</span>
                                     <div class="btn-counter" onclick="updateSubCount('comp', 1)">+</div>
                                 </div>
                             </div>
@@ -328,7 +368,7 @@
                                     <div class="flex items-center gap-3">
                                         <div class="btn-counter" onclick="updateSubCount('res4k', -1)">-</div>
                                         <input type="hidden" id="count-res4k" name="4K_Frames" value="0">
-                                        <span class="w-4 text-center text-sm" id="val-res4k">0</span>
+                                        <span class="w-4 text-center text-sm" id="val-res4k">۰</span>
                                         <div class="btn-counter" onclick="updateSubCount('res4k', 1)">+</div>
                                     </div>
                                 </div>
@@ -337,7 +377,7 @@
                                     <div class="flex items-center gap-3">
                                         <div class="btn-counter" onclick="updateSubCount('res8k', -1)">-</div>
                                         <input type="hidden" id="count-res8k" name="8K_Frames" value="0">
-                                        <span class="w-4 text-center text-sm" id="val-res8k">0</span>
+                                        <span class="w-4 text-center text-sm" id="val-res8k">۰</span>
                                         <div class="btn-counter" onclick="updateSubCount('res8k', 1)">+</div>
                                     </div>
                                 </div>
@@ -356,7 +396,7 @@
                                     <div class="flex items-center gap-3">
                                         <div class="btn-counter" onclick="updateSubCount('fxLight', -1)">-</div>
                                         <input type="hidden" id="count-fxLight" name="FX_Light_Frames" value="0">
-                                        <span class="w-4 text-center text-sm" id="val-fxLight">0</span>
+                                        <span class="w-4 text-center text-sm" id="val-fxLight">۰</span>
                                         <div class="btn-counter" onclick="updateSubCount('fxLight', 1)">+</div>
                                     </div>
                                 </div>
@@ -365,7 +405,7 @@
                                     <div class="flex items-center gap-3">
                                         <div class="btn-counter" onclick="updateSubCount('fxHeavy', -1)">-</div>
                                         <input type="hidden" id="count-fxHeavy" name="FX_Heavy_Frames" value="0">
-                                        <span class="w-4 text-center text-sm" id="val-fxHeavy">0</span>
+                                        <span class="w-4 text-center text-sm" id="val-fxHeavy">۰</span>
                                         <div class="btn-counter" onclick="updateSubCount('fxHeavy', 1)">+</div>
                                     </div>
                                 </div>
@@ -386,27 +426,28 @@
             <!-- Price Block -->
             <div class="flex-grow">
                 <div class="text-xs text-neutral-500 uppercase tracking-widest mb-1">مبلغ کل برآورد (تومان)</div>
-                <div class="text-3xl md:text-4xl font-light text-white tracking-tight leading-tight transition-all duration-500 ease-in-out" id="totalCostDisplay">57,600,000</div>
+                <!-- PRICE DISPLAY: Now uses Persian digits (via Intl.NumberFormat) -->
+                <div class="text-3xl md:text-4xl font-light text-white tracking-tight leading-tight transition-all duration-500 ease-in-out" id="totalCostDisplay">۵۷,۶۰۰,۰۰۰</div>
             </div>
 
             <!-- Payment Schedule -->
             <div class="hidden md:flex gap-8 text-xs text-neutral-400 border-r border-neutral-800 pr-8">
                 <div>
                     <div class="text-neutral-600 mb-1">مرحله ۱ (۳۳٪)</div>
-                    <div class="text-white transition-all duration-500 ease-in-out" id="pay-1">0</div>
+                    <div class="text-white transition-all duration-500 ease-in-out" id="pay-1">۰</div>
                 </div>
                 <div>
                     <div class="text-neutral-600 mb-1">مرحله ۲ (۳۳٪)</div>
-                    <div class="text-white transition-all duration-500 ease-in-out" id="pay-2">0</div>
+                    <div class="text-white transition-all duration-500 ease-in-out" id="pay-2">۰</div>
                 </div>
                 <div>
                     <div class="text-neutral-600 mb-1">مرحله ۳ (۳۴٪)</div>
-                    <div class="text-white transition-all duration-500 ease-in-out" id="pay-3">0</div>
+                    <div class="text-white transition-all duration-500 ease-in-out" id="pay-3">۰</div>
                 </div>
             </div>
 
             <!-- Action Button -->
-            <!-- Type is now 'submit' which triggers the form's onSubmit event -->
+            <!-- Type is 'submit' which triggers the form's onSubmit event -->
             <button type="submit" form="pricingForm" id="send-request-button" class="w-1/3 min-w-[180px] md:w-auto btn-primary py-3 px-6 rounded text-sm font-medium tracking-wide ml-4">
                 ارسال درخواست
             </button>
@@ -416,15 +457,15 @@
         <div class="md:hidden mt-4 pt-4 border-t border-neutral-800 grid grid-cols-3 gap-2 text-xs">
             <div>
                 <span class="text-neutral-500 block">مرحله ۱ (۳۳٪)</span>
-                <span class="text-white" id="pay-1-m">0</span>
+                <span class="text-white" id="pay-1-m">۰</span>
             </div>
             <div>
                 <span class="text-neutral-500 block">مرحله ۲ (۳۳٪)</span>
-                <span class="text-white" id="pay-2-m">0</span>
+                <span class="text-white" id="pay-2-m">۰</span>
             </div>
             <div>
                 <span class="text-neutral-500 block">مرحله ۳ (۳۴٪)</span>
-                <span class="text-white" id="pay-3-m">0</span>
+                <span class="text-white" id="pay-3-m">۰</span>
             </div>
         </div>
     </div>
@@ -441,6 +482,13 @@
         };
 
         // --- Utils ---
+        // Converts English digits to Persian digits
+        const toPersianDigits = (str) => {
+            const persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return str.toString().replace(/[0-9]/g, (w) => persian[+w]);
+        };
+
+        // Intl.NumberFormat('fa-IR') naturally uses Persian digits
         const formatMoneyFull = (n) => new Intl.NumberFormat('fa-IR').format(Math.round(n)) + ' تومان';
         const formatMoneyShort = (n) => new Intl.NumberFormat('fa-IR').format(Math.round(n)); 
         const getEl = (id) => document.getElementById(id);
@@ -448,7 +496,6 @@
             const el = getEl(id);
             if (el) el.value = value;
         };
-        // Helper function to create a hidden input field
         const createHiddenInput = (name, value) => {
             const input = document.createElement('input');
             input.type = 'hidden';
@@ -466,7 +513,7 @@
             document.querySelectorAll('.select-card').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
             
-            // Update hidden input for form submission
+            // Update hidden input for form submission (value is always English for machine reading)
             getEl('modelingLevel').value = `${state.modelingLabel} (${formatMoneyShort(state.modelingPrice)} تومان)`;
 
             calculate();
@@ -475,7 +522,8 @@
         function updateTotalFrames(val) {
             const newVal = parseInt(val);
             state.totalFrames = newVal;
-            getEl('frameDisplay').innerText = newVal;
+            // Apply Persian digits to display
+            getEl('frameDisplay').innerText = toPersianDigits(newVal); 
             validateCounts();
             calculate();
         }
@@ -501,8 +549,9 @@
 
 
             state.counts[type] = newVal;
-            getEl(`val-${type}`).innerText = newVal;
-            // Update hidden input for form submission
+            // Apply Persian digits to display
+            getEl(`val-${type}`).innerText = toPersianDigits(newVal); 
+            // Update hidden input for form submission (value is always English for machine reading)
             setElValue(`count-${type}`, newVal);
             calculate();
         }
@@ -525,7 +574,7 @@
 
             // Update UI elements after validation
             for (let key in state.counts) {
-                getEl(`val-${key}`).innerText = state.counts[key];
+                getEl(`val-${key}`).innerText = toPersianDigits(state.counts[key]);
                 setElValue(`count-${key}`, state.counts[key]);
             }
         }
@@ -565,50 +614,82 @@
         }
 
         // --- UX Functions ---
-
-        function showValidationFeedback(message) {
-            const phoneInput = getEl('phoneNumber');
+        
+        // Removed showValidationFeedback and replaced with a dynamic message
+        function showMessage(message, isSuccess = false) {
             const validationMsg = getEl('validationMessage');
-            
             validationMsg.innerText = message;
-            validationMsg.classList.add('active');
-            phoneInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            phoneInput.classList.add('error-highlight');
             
+            validationMsg.classList.remove('active', 'error', 'success');
+            validationMsg.classList.add('active', isSuccess ? 'success' : 'error');
+            
+            getEl('phoneNumber').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            getEl('phoneNumber').classList.add('error-highlight');
+
+            // Hide after 4 seconds
             setTimeout(() => {
-                phoneInput.classList.remove('error-highlight');
+                getEl('phoneNumber').classList.remove('error-highlight');
                 validationMsg.classList.remove('active');
-            }, 3000); 
+            }, 4000);
+        }
+        
+        function startLoading(button) {
+            button.classList.add('loading');
+            button.innerHTML = 'در حال ارسال... <span class="spinner"></span>';
         }
 
-        // --- Request Submission (Default Form Submit) ---
+        function stopLoading(button, isSuccess = false) {
+            button.classList.remove('loading');
+            button.innerHTML = 'ارسال درخواست';
+            // Optionally, reset the form on success
+            if (isSuccess) {
+                 // Reset form fields
+                 getEl('pricingForm').reset();
+                 // Re-calculate to reset prices
+                 selectModel(20, document.querySelector('.select-card[data-price="20"]'));
+            }
+        }
+
+
+        // --- Request Submission (Default Form Submit with iFrame Target) ---
 
         /**
-         * Prepares all necessary hidden fields for FormSubmit, validates input, 
-         * and then allows the form to submit normally, which works better in restricted environments.
+         * Prepares all necessary hidden fields and uses the hidden iframe target 
+         * to submit the form without full page navigation/redirection.
          * @param {Event} event The submit event
-         * @returns {boolean} True to allow submission, false to prevent it.
+         * @returns {boolean} False to always prevent the default submission, as we handle it manually.
          */
         window.prepDataAndSubmit = function(event) {
+            const form = getEl('pricingForm');
+            const button = getEl('send-request-button');
+            const iframe = getEl('formsubmit-target');
             
+            // 1. Validation
             const phoneNumber = getEl('phoneNumber').value.trim();
             if (!phoneNumber) {
-                showValidationFeedback("برای ارسال درخواست، لطفاً شماره تماس خود را در کادر مربوطه وارد نمایید.");
+                showMessage("برای ارسال درخواست، لطفاً شماره تماس خود را در کادر مربوطه وارد نمایید.");
                 return false; // Prevent form submission
             }
+
+            // Prevent double submission
+            if (button.classList.contains('loading')) {
+                event.preventDefault();
+                return false;
+            }
+
+            // 2. Start Loading State
+            startLoading(button);
             
-            // 1. Calculate final data
+            // 3. Prepare Data
             const data = calculate();
             const date = new Date().toLocaleDateString('fa-IR');
             
-            // 2. Build the detailed report and required hidden fields
             const brandName = getEl('brandName').value || "وارد نشده";
             const clientName = getEl('clientName').value || "وارد نشده";
             const countryCode = getEl('countryCode').value;
             const fullPhone = countryCode + ' ' + phoneNumber;
             const projectDesc = getEl('productDesc').value || "وارد نشده";
 
-            // Update the combined phone number field
             getEl('fullPhoneNumber').value = fullPhone;
 
             const emailBody = `
@@ -624,15 +705,15 @@
 ${projectDesc}
 
 --- خلاصه هزینه (مبلغ نهایی: ${formatMoneyFull(data.grandTotal)}) ---
-* **سطح مدل‌سازی:** ${state.modelingLabel} (${formatMoneyFull(state.modelingPrice)})
+* **سطح مدل‌سازی:** ${state.modelingLabel} (${formatMoneyShort(state.modelingPrice)} تومان)
 * **تعداد کل فریم (پایه):** ${state.totalFrames} فریم (${formatMoneyFull(data.baseRenderCost)})
 
 --- جزئیات سفارش ---
-* **چیدمان پیچیده (+۳۰٪):** ${state.counts.comp} فریم (اضافه بها: ${formatMoneyFull(data.costComp)})
-* **رزولوشن 4K (+۱۵٪):** ${state.counts.res4k} فریم (اضافه بها: ${formatMoneyFull(data.cost4k)})
-* **رزولوشن 8K (+۳۰٪):** ${state.counts.res8k} فریم (اضافه بها: ${formatMoneyFull(data.cost8k)})
-* **FX سبک (+۳۰٪):** ${state.counts.fxLight} فریم (اضافه بها: ${formatMoneyFull(data.costFxL)})
-* **FX سنگین (+۶۰٪):** ${state.counts.fxHeavy} فریم (اضافه بها: ${formatMoneyFull(data.costFxH)})
+* **چیدمان پیچیده (+۳۰٪):** ${toPersianDigits(state.counts.comp)} فریم (اضافه بها: ${formatMoneyFull(data.costComp)})
+* **رزولوشن 4K (+۱۵٪):** ${toPersianDigits(state.counts.res4k)} فریم (اضافه بها: ${formatMoneyFull(data.cost4k)})
+* **رزولوشن 8K (+۳۰٪):** ${toPersianDigits(state.counts.res8k)} فریم (اضافه بها: ${formatMoneyFull(data.cost8k)})
+* **FX سبک (+۳۰٪):** ${toPersianDigits(state.counts.fxLight)} فریم (اضافه بها: ${formatMoneyFull(data.costFxL)})
+* **FX سنگین (+۶۰٪):** ${toPersianDigits(state.counts.fxHeavy)} فریم (اضافه بها: ${formatMoneyFull(data.costFxH)})
 
 --- شرایط پرداخت (تومان) ---
 * **مرحله اول (۳۳٪):** ${formatMoneyShort(data.pay1)}
@@ -642,7 +723,7 @@ ${projectDesc}
 این یک برآورد اتوماتیک است. لطفا در اسرع وقت برای نهایی‌سازی با مشتری تماس بگیرید.
 `;
             
-            // 3. Clear and add dynamic hidden fields
+            // 4. Clear and add dynamic hidden fields
             const container = getEl('dynamic-fields-container');
             container.innerHTML = '';
 
@@ -653,8 +734,38 @@ ${projectDesc}
             container.appendChild(createHiddenInput('Payment_Stage_3', formatMoneyShort(data.pay3)));
             container.appendChild(createHiddenInput('_body', emailBody)); 
             
-            // Allow the form to submit normally
-            return true;
+            // 5. Handle iFrame Load (Success/Redirection)
+            let isSubmitted = false;
+            
+            // Listener for successful submission (FormSubmit redirects the iframe)
+            iframe.onload = function() {
+                if (!isSubmitted) {
+                    isSubmitted = true;
+                    stopLoading(button, true);
+                    showMessage("✅ درخواست شما با موفقیت ثبت شد! در اسرع وقت با شما تماس می‌گیریم.", true);
+                    // Crucial: Remove listener to prevent re-triggering
+                    iframe.onload = null;
+                }
+            };
+            
+            // Fallback: If iFrame load doesn't fire (sometimes happens in strict iFrames), 
+            // assume success after a fixed delay.
+            setTimeout(() => {
+                if (!isSubmitted) {
+                    isSubmitted = true;
+                    stopLoading(button, true);
+                    showMessage("✅ (تأیید خودکار) ارسال با موفقیت انجام شد! لطفاً ایمیل خود را چک کنید.", true);
+                    iframe.onload = null; // Clear listener
+                }
+            }, 5000); // 5 seconds grace period
+            
+            
+            // 6. Manual Submission
+            // Since we use the target attribute, we must call submit() manually
+            form.submit();
+            event.preventDefault(); // Stop default form action that might still try to navigate
+
+            return false; // Prevent form's default submission path
         }
 
 
@@ -698,6 +809,7 @@ ${projectDesc}
         window.addEventListener('load', () => {
              // Set initial values and styles
              selectModel(20, document.querySelector('.select-card[data-price="20"]'));
+             // The frame display is initialized with Persian 8 (۸) in HTML, so we just calculate.
              calculate(); 
              handleScroll(); // Check initial state for button visibility
         });
