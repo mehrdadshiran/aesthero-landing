@@ -24,6 +24,19 @@
             initial-value: 0deg;
         }
 
+        /* Prevent horizontal scroll and zoom issues on mobile */
+        html {
+            background-color: #050505; /* Ensure html background matches body */
+        }
+        
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            min-height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
         .logo-font {
             font-family: 'Outfit', sans-serif;
             letter-spacing: 0.02em; 
@@ -85,8 +98,8 @@
             font-family: 'Vazirmatn', sans-serif;
             background-color: #050505;
             color: #e5e5e5;
-            overflow-x: hidden; 
             padding-bottom: 250px; 
+            position: relative;
         }
         
         /* Input/Select Styling */
@@ -165,6 +178,15 @@
         .btn-primary { background: #fff; color: #000; border: 1px solid #fff; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); opacity: 0; visibility: hidden; transform: translateY(10px); }
         .btn-primary:hover { background: transparent; color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
 
+        /* Ensure button is visible on mobile without scroll */
+        @media (max-width: 768px) {
+            .btn-primary {
+                opacity: 1 !important;
+                visibility: visible !important;
+                transform: translateY(0) !important;
+            }
+        }
+
         .btn-modal-confirm { background: #fff; color: #000; border: 1px solid #fff; transition: all 0.2s; }
         .btn-modal-confirm:hover { background: #e5e5e5; }
 
@@ -184,17 +206,34 @@
         .btn-modal-download:hover { border-color: #fff; background: rgba(255,255,255,0.05); }
 
         .btn-counter { 
-            width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; 
+            /* Increased Touch Area for Mobile */
+            width: 52px; height: 52px; 
+            display: flex; align-items: center; justify-content: center; 
             border: 1px solid #333; border-radius: 4px; cursor: pointer; transition: all 0.2s; font-size: 1.4rem; 
         }
         .btn-counter:hover:not(.disabled) { background: #fff; color: #000; border-color: #fff; }
         .btn-counter.disabled { opacity: 0.2; cursor: not-allowed; border-color: #222; }
 
-        /* Slider Styling */
-        .studio-slider { width: 100%; -webkit-appearance: none; appearance: none; height: 10px; background: transparent; margin: 10px 0; cursor: pointer; }
+        /* Slider Styling - Improved for Touch */
+        .studio-slider { 
+            width: 100%; 
+            -webkit-appearance: none; appearance: none; 
+            height: 20px; /* Increased track container height for easier touch */
+            background: transparent; 
+            margin: 10px 0; 
+            cursor: pointer; 
+        }
         .studio-slider::-webkit-slider-runnable-track { height: 2px; background: #333; border-radius: 1px; transition: all 0.3s; }
-        .studio-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; cursor: pointer; margin-top: -7px; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        .studio-slider:hover::-webkit-slider-thumb { transform: scale(1.3); }
+        
+        .studio-slider::-webkit-slider-thumb { 
+            -webkit-appearance: none; appearance: none; 
+            width: 24px; height: 24px; /* Larger thumb */
+            border-radius: 50%; background: #fff; 
+            cursor: pointer; margin-top: -11px; /* Centered */
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.1); /* Touch glow */
+        }
+        .studio-slider:hover::-webkit-slider-thumb { transform: scale(1.1); }
         
         /* UX Helpers */
         .error-highlight {
@@ -260,9 +299,9 @@
         .modal-overlay.active .modal-content { transform: translateY(0); }
 
         /* PDF/Image Template Styles */
-        /* Completely hide off-screen to prevent UI issues */
+        /* CRITICAL FIX: Use fixed positioning instead of absolute to prevent mobile layout blowout */
         #pdf-template {
-            position: absolute;
+            position: fixed; /* Changed from absolute to fixed */
             top: 0;
             left: -9999px; /* Move far off-screen */
             width: 800px; /* Fixed width for consistent image */
