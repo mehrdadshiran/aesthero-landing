@@ -2,7 +2,8 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <!-- Updated viewport meta tag for keyboard behavior -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     
     <!-- Cache-Control Meta Tags to prevent caching -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -274,8 +275,13 @@
             padding-bottom: 1rem;
         }
         .glass-footer.resize { padding-top: 2rem; padding-bottom: 2rem; }
+        
+        /* Only apply font resize on desktop */
+        @media (min-width: 768px) {
+            .glass-footer.resize #totalCostDisplay { font-size: 2.8rem; }
+        }
+        
         .glass-footer.resize .btn-primary { opacity: 1; visibility: visible; transform: translateY(0); }
-        .glass-footer.resize #totalCostDisplay { font-size: 2.8rem; } 
         .glass-footer.resize .md\:flex > div .text-white { font-size: 0.85rem; }
 
         /* Modal Styling */
@@ -929,23 +935,23 @@
                 <div class="text-3xl md:text-4xl font-light text-white tracking-tight leading-tight transition-all duration-500 ease-in-out" id="totalCostDisplay">۲۰,۰۰۰,۰۰۰</div>
             </div>
 
-            <!-- Payment Terms Button -->
-            <button onclick="openPaymentModal()" class="h-14 group flex items-center gap-2 px-4 rounded-lg border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 hover:border-neutral-600 transition-all duration-300">
-                <div class="bg-neutral-800 p-1 rounded-full group-hover:bg-white group-hover:text-black transition-colors text-neutral-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <div class="flex flex-col items-start">
-                    <span class="text-xs text-neutral-400 group-hover:text-white transition-colors">شرایط پرداخت</span>
-                    <span class="text-[10px] text-neutral-600 group-hover:text-neutral-400 transition-colors">مشاهده مراحل</span>
-                </div>
-            </button>
+            <!-- Button Wrapper -->
+            <div class="flex gap-2 items-center flex-none">
+                <!-- Payment Terms Button -->
+                <button onclick="openPaymentModal()" class="h-14 w-32 md:w-40 group flex items-center justify-center gap-2 px-2 rounded-lg border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 hover:border-neutral-600 transition-all duration-300">
+                    <div class="hidden md:block bg-neutral-800 p-1 rounded-full group-hover:bg-white group-hover:text-black transition-colors text-neutral-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <span class="text-xs text-neutral-400 group-hover:text-white transition-colors">مراحل پرداخت</span>
+                </button>
 
-            <!-- Action Button -->
-            <button onclick="openModal()" id="send-request-button" class="h-14 w-auto px-6 md:px-8 min-w-[120px] md:min-w-[140px] btn-primary rounded text-sm font-medium tracking-wide flex items-center justify-center">
-                ارسال درخواست
-            </button>
+                <!-- Action Button -->
+                <button onclick="openModal()" id="send-request-button" class="h-14 w-32 md:w-40 px-2 btn-primary rounded-lg text-sm font-medium tracking-wide flex items-center justify-center">
+                    ارسال درخواست
+                </button>
+            </div>
         </div>
     </div>
 
