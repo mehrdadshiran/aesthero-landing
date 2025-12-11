@@ -2,8 +2,8 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <!-- Updated viewport meta tag for keyboard behavior -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <!-- Reverted viewport meta tag to standard behavior (removed interactive-widget) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <!-- Cache-Control Meta Tags to prevent caching -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -936,9 +936,11 @@
             </div>
 
             <!-- Button Wrapper -->
-            <div class="flex gap-2 items-center flex-none">
+            <!-- ADDED: ml-3 to push buttons away from left edge on mobile -->
+            <div class="flex gap-2 items-center flex-none ml-3 md:ml-0">
                 <!-- Payment Terms Button (Fixed Width) -->
-                <button onclick="openPaymentModal()" class="h-14 w-36 md:w-44 group flex items-center justify-center gap-2 px-2 rounded-lg border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 hover:border-neutral-600 transition-all duration-300">
+                <!-- CHANGED: w-36 to w-32 for mobile -->
+                <button onclick="openPaymentModal()" class="h-14 w-32 md:w-44 group flex items-center justify-center gap-2 px-2 rounded-lg border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 hover:border-neutral-600 transition-all duration-300">
                     <div class="hidden md:block bg-neutral-800 p-1 rounded-full group-hover:bg-white group-hover:text-black transition-colors text-neutral-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -948,7 +950,8 @@
                 </button>
 
                 <!-- Action Button (Fixed Width equal to above) -->
-                <button onclick="openModal()" id="send-request-button" class="h-14 w-36 md:w-44 px-2 btn-primary rounded-lg text-sm font-medium tracking-wide flex items-center justify-center">
+                <!-- CHANGED: w-36 to w-32 for mobile -->
+                <button onclick="openModal()" id="send-request-button" class="h-14 w-32 md:w-44 px-2 btn-primary rounded-lg text-sm font-medium tracking-wide flex items-center justify-center">
                     ارسال درخواست
                 </button>
             </div>
@@ -1412,6 +1415,9 @@ ${projectDesc}
 
         // --- Scroll Animation Logic ---
         function handleScroll() {
+            // Disable scroll resizing on mobile
+            if (window.innerWidth < 1024) return;
+
             const footer = getEl('sticky-footer');
             const mainContentWrapper = document.querySelector('.main-content-wrapper');
             
@@ -1503,34 +1509,6 @@ ${projectDesc}
                 });
              }
         });
-
-        // --- Visual Viewport Handling for Mobile Keyboard (Fixes Footer Issue) ---
-        if (window.visualViewport) {
-            function handleVisualViewport() {
-                const footer = getEl('sticky-footer');
-                if (!footer) return;
-                
-                // Calculate offset from bottom of layout viewport
-                // This determines how much "hidden" space is below the visible area (e.g. keyboard)
-                const layoutHeight = document.documentElement.clientHeight;
-                const visualHeight = window.visualViewport.height;
-                const visualTop = window.visualViewport.offsetTop;
-                
-                // Calculate the gap at the bottom
-                // We use Math.ceil to avoid sub-pixel jitter
-                const offsetBottom = Math.ceil(layoutHeight - (visualTop + visualHeight));
-                
-                // Apply offset to footer bottom
-                // Using style.bottom allows it to stick above the keyboard
-                footer.style.bottom = `${Math.max(0, offsetBottom)}px`;
-            }
-
-            window.visualViewport.addEventListener('resize', handleVisualViewport);
-            window.visualViewport.addEventListener('scroll', handleVisualViewport);
-            
-            // Also listen to window scroll as fallback
-            window.addEventListener('scroll', handleVisualViewport);
-        }
 
     </script>
 </body>
