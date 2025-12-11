@@ -937,8 +937,8 @@
 
             <!-- Button Wrapper -->
             <div class="flex gap-2 items-center flex-none">
-                <!-- Payment Terms Button -->
-                <button onclick="openPaymentModal()" class="h-14 w-32 md:w-40 group flex items-center justify-center gap-2 px-2 rounded-lg border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 hover:border-neutral-600 transition-all duration-300">
+                <!-- Payment Terms Button (Fixed Width) -->
+                <button onclick="openPaymentModal()" class="h-14 w-36 md:w-44 group flex items-center justify-center gap-2 px-2 rounded-lg border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 hover:border-neutral-600 transition-all duration-300">
                     <div class="hidden md:block bg-neutral-800 p-1 rounded-full group-hover:bg-white group-hover:text-black transition-colors text-neutral-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -947,8 +947,8 @@
                     <span class="text-xs text-neutral-400 group-hover:text-white transition-colors">مراحل پرداخت</span>
                 </button>
 
-                <!-- Action Button -->
-                <button onclick="openModal()" id="send-request-button" class="h-14 w-32 md:w-40 px-2 btn-primary rounded-lg text-sm font-medium tracking-wide flex items-center justify-center">
+                <!-- Action Button (Fixed Width equal to above) -->
+                <button onclick="openModal()" id="send-request-button" class="h-14 w-36 md:w-44 px-2 btn-primary rounded-lg text-sm font-medium tracking-wide flex items-center justify-center">
                     ارسال درخواست
                 </button>
             </div>
@@ -1503,6 +1503,34 @@ ${projectDesc}
                 });
              }
         });
+
+        // --- Visual Viewport Handling for Mobile Keyboard (Fixes Footer Issue) ---
+        if (window.visualViewport) {
+            function handleVisualViewport() {
+                const footer = getEl('sticky-footer');
+                if (!footer) return;
+                
+                // Calculate offset from bottom of layout viewport
+                // This determines how much "hidden" space is below the visible area (e.g. keyboard)
+                const layoutHeight = document.documentElement.clientHeight;
+                const visualHeight = window.visualViewport.height;
+                const visualTop = window.visualViewport.offsetTop;
+                
+                // Calculate the gap at the bottom
+                // We use Math.ceil to avoid sub-pixel jitter
+                const offsetBottom = Math.ceil(layoutHeight - (visualTop + visualHeight));
+                
+                // Apply offset to footer bottom
+                // Using style.bottom allows it to stick above the keyboard
+                footer.style.bottom = `${Math.max(0, offsetBottom)}px`;
+            }
+
+            window.visualViewport.addEventListener('resize', handleVisualViewport);
+            window.visualViewport.addEventListener('scroll', handleVisualViewport);
+            
+            // Also listen to window scroll as fallback
+            window.addEventListener('scroll', handleVisualViewport);
+        }
 
     </script>
 </body>
