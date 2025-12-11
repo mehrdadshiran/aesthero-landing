@@ -5,16 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>سیستم برآورد هزینه خدمات سه‌بعدی aesthero studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use html2canvas for robust image generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
+        /* Define custom property for rotation animation */
+        @property --rotation {
+            syntax: "<angle>";
+            inherits: false;
+            initial-value: 0deg;
+        }
+
         .logo-font {
             font-family: 'Outfit', sans-serif;
-            /* Reduced tracking (was 0.1em, now 0.02em for a tighter, cleaner look) */
             letter-spacing: 0.02em; 
         }
         
+        .studio-text {
+            letter-spacing: -0.02em; 
+            margin-right: 0; 
+        }
+        
+        /* Marquee Animation Styles */
+        @keyframes scroll-pingpong {
+            0%, 25% { transform: translateX(0); }
+            75%, 100% { transform: translateX(var(--scroll-diff)); }
+        }
+
+        .marquee-text {
+            display: inline-block;
+            white-space: nowrap;
+            will-change: transform;
+        }
+
+        .marquee-text.scrolling {
+            animation: scroll-pingpong 3.2s ease-in-out infinite alternate;
+        }
+
+        /* Validation Error Message Style */
+        .input-error-msg {
+            color: #f87171;
+            font-size: 0.75rem; /* text-xs */
+            
+            /* Smooth Transition Setup */
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .input-error-msg.visible {
+            /* Visible State */
+            max-height: 40px; /* Enough space for text */
+            opacity: 1;
+            margin-top: 0.5rem;
+        }
+
+        /* Custom Select Wrapper */
+        .custom-select-wrapper {
+            background-color: transparent;
+            border: 1px solid #333;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .custom-select-wrapper:focus-within {
+            border-color: #fff;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+        }
+
         body {
             font-family: 'Vazirmatn', sans-serif;
             background-color: #050505;
@@ -32,19 +92,90 @@
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
+            color-scheme: dark; 
         }
         .studio-input:focus, .studio-select:focus { border-color: #fff; outline: none; box-shadow: 0 0 0 1px rgba(255,255,255,0.1); }
-        .studio-select option { background-color: #050505; color: #fff; }
+        .studio-select option { background-color: #050505; color: #fff; direction: ltr; } 
         
         /* Card Styling */
-        .select-card { border: 1px solid #262626; background: #0a0a0a; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); padding-top: 1.25rem; padding-bottom: 1.25rem; }
+        .select-card { 
+            border: 1px solid #262626; 
+            background: #0a0a0a; 
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s, color 0.4s; 
+            padding-top: 1.25rem; 
+            padding-bottom: 1.25rem; 
+            position: relative; 
+            overflow: visible; 
+        }
         .select-card:hover { border-color: #525252; transform: translateY(-2px); }
-        .select-card.active { background: #fff; border-color: #fff; color: #000; }
+        
+        /* ACTIVE STATE */
+        .select-card.active { 
+            background: #fff; 
+            color: #000; 
+            border-color: transparent; 
+            z-index: 10;
+            animation: pulse-glow 1.8s ease-in-out infinite alternate;
+        }
+        
         .select-card.active .sub-text { color: #525252; }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 18px rgba(255, 255, 255, 0.35); }
+            100% { box-shadow: 0 0 45px rgba(255, 255, 255, 0.85); }
+        }
+
+        @keyframes rotate-border {
+            to { --rotation: 360deg; }
+        }
+
+        .select-card.active::before {
+            content: "";
+            position: absolute;
+            inset: -3px; 
+            z-index: -1; 
+            border-radius: 2px; 
+            background: conic-gradient(
+                from var(--rotation), 
+                transparent 10%, 
+                rgba(255, 255, 255, 0.5) 40%, 
+                #ffffff 50%, 
+                rgba(255, 255, 255, 0.5) 60%, 
+                transparent 90%
+            );
+            animation: rotate-border 4s linear infinite;
+        }
+
+        .select-card.active::after {
+            content: "";
+            position: absolute;
+            inset: -3px;
+            z-index: -2;
+            border-radius: 2px;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1));
+        }
         
         /* Button Styling */
         .btn-primary { background: #fff; color: #000; border: 1px solid #fff; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); opacity: 0; visibility: hidden; transform: translateY(10px); }
         .btn-primary:hover { background: transparent; color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
+
+        .btn-modal-confirm { background: #fff; color: #000; border: 1px solid #fff; transition: all 0.2s; }
+        .btn-modal-confirm:hover { background: #e5e5e5; }
+
+        .btn-modal-edit { background: transparent; color: #aaa; border: 1px solid #333; transition: all 0.2s; }
+        .btn-modal-edit:hover { border-color: #fff; color: #fff; }
+
+        .btn-modal-download { 
+            background: transparent; 
+            color: #fff; 
+            border: 1px solid #555; 
+            transition: all 0.2s; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-modal-download:hover { border-color: #fff; background: rgba(255,255,255,0.05); }
 
         .btn-counter { 
             width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; 
@@ -84,6 +215,8 @@
             visibility: hidden;
             transform: translateY(5px);
             transition: all 0.2s ease-in-out;
+            width: max-content;
+            max-width: 250px;
         }
 
         /* Footer Styling */
@@ -99,6 +232,137 @@
         .glass-footer.resize .btn-primary { opacity: 1; visibility: visible; transform: translateY(0); }
         .glass-footer.resize #totalCostDisplay { font-size: 2.8rem; } 
         .glass-footer.resize .md\:flex > div .text-white { font-size: 0.85rem; }
+
+        /* Modal Styling */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            z-index: 100;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        
+        .modal-content {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            width: 90%; max-width: 500px;
+            padding: 2rem;
+            transform: translateY(20px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+
+        /* PDF/Image Template Styles */
+        /* Completely hide off-screen to prevent UI issues */
+        #pdf-template {
+            position: absolute;
+            top: 0;
+            left: -9999px; /* Move far off-screen */
+            width: 800px; /* Fixed width for consistent image */
+            min-height: 1000px;
+            /* CHANGED: Dark Background */
+            background: #050505; 
+            /* CHANGED: Light Text */
+            color: #e5e5e5;
+            padding: 40px;
+            font-family: 'Vazirmatn', sans-serif;
+            direction: rtl;
+            z-index: -200; 
+            pointer-events: none;
+        }
+        
+        #pdf-template .pdf-header {
+            /* CHANGED: Darker border */
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #pdf-template .pdf-logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            /* Flex layout for consistent logo style */
+            display: flex;
+            align-items: center;
+            direction: ltr;
+        }
+        #pdf-template .pdf-title {
+            /* CHANGED: Smaller font size from 22px to 18px */
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+        }
+        #pdf-template .pdf-section {
+            margin-bottom: 30px;
+        }
+        #pdf-template .pdf-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            border-bottom: 1px solid #333;
+            /* Increased padding-bottom for spacing */
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        #pdf-template .pdf-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #d4d4d4;
+        }
+        #pdf-template .pdf-box {
+            background: #111;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 4px;
+            color: #d4d4d4;
+            /* CHANGED: Vertical Centering for description text */
+            display: flex;
+            align-items: center;
+            min-height: 60px; /* Ensure height for centering effect */
+        }
+        #pdf-template .pdf-total {
+            background: #fff;
+            color: #000;
+            padding: 20px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 30px;
+            /* Flexbox for centering */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        /* Lift text more to appear visually centered */
+        #pdf-template .pdf-total span {
+            position: relative;
+            top: -7px;
+        }
+
+        /* Override for addons list items in dark mode */
+        #pdf-addons-container .pdf-row {
+            color: #aaa !important; 
+        }
+        
+        .disclaimer-text {
+            color: #666;
+            font-size: 11px;
+            line-height: 1.6;
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            /* CHANGED: Removed border */
+            border: none; 
+            /* border: 1px dashed #333; removed */
+            border-radius: 4px;
+        }
 
         /* Landscape Mode */
         @media (orientation: landscape) and (max-width: 1024px) {
@@ -124,13 +388,246 @@
         برای ارسال درخواست، لطفاً شماره تماس خود را در کادر مربوطه وارد نمایید.
     </div>
 
+    <!-- Hidden Template for Image Generation -->
+    <div id="pdf-template">
+        <div class="pdf-header">
+            <!-- CHANGED: Swapped Order for RTL Layout (Title Right, Logo Left) -->
+            
+            <!-- 1. Title (Will be on Right in RTL) -->
+            <div class="pdf-title">جزییات درخواست خدمات سه بعدی</div>
+
+            <!-- 2. Logo (Will be on Left in RTL) -->
+            <div class="pdf-logo">
+                <span style="font-weight: 600; color: #fff;">aesthero</span>
+                <span style="font-weight: 300; color: #737373;">studio</span>
+            </div>
+        </div>
+
+        <div class="pdf-section">
+            <div class="pdf-section-title">اطلاعات سفارش‌دهنده</div>
+            <div class="pdf-row">
+                <span style="color: #888;">نام برند:</span>
+                <span id="pdf-brand" dir="ltr" style="color: #fff;">--</span>
+            </div>
+            <div class="pdf-row">
+                <span style="color: #888;">نام سفارش‌دهنده:</span>
+                <span id="pdf-client" dir="ltr" style="color: #fff;">--</span>
+            </div>
+            <div class="pdf-row">
+                <span style="color: #888;">شماره تماس:</span>
+                <span id="pdf-phone" dir="ltr" style="color: #fff;">--</span>
+            </div>
+            <div class="pdf-row">
+                <span style="color: #888;">تاریخ:</span>
+                <span id="pdf-date" style="color: #fff;">--</span>
+            </div>
+        </div>
+
+        <div class="pdf-section">
+            <div class="pdf-section-title">شرح پروژه</div>
+            <div class="pdf-box" id="pdf-desc" style="font-size: 14px; line-height: 1.8;">
+                --
+            </div>
+        </div>
+
+        <div class="pdf-section">
+            <div class="pdf-section-title">جزئیات فنی و هزینه</div>
+            <div class="pdf-row">
+                <span style="color: #aaa;">سطح مدل‌سازی:</span>
+                <span id="pdf-modeling" style="color: #fff;">--</span>
+            </div>
+            <div class="pdf-row">
+                <span style="color: #aaa;">تعداد فریم نهایی:</span>
+                <span id="pdf-frames" style="color: #fff;">--</span>
+            </div>
+            <div id="pdf-addons-container" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #333;">
+                <!-- Addons will be injected here -->
+            </div>
+        </div>
+
+        <div class="pdf-total">
+            <span>مبلغ کل برآورد: </span>
+            <span id="pdf-total">--</span>
+        </div>
+
+        <!-- ADDED: Disclaimer in PDF -->
+        <div class="disclaimer-text" style="color: #888; border-color: #444; margin-top: 30px;">
+            توجه: مبلغ فوق صرفاً یک برآورد اولیه بر اساس اطلاعات ورودی است. هزینه دقیق و نهایی پس از برگزاری جلسه مشاوره و بررسی تخصصی جزئیات پروژه تعیین و اعلام خواهد شد.
+        </div>
+
+        <div class="pdf-section" style="margin-top: 30px;">
+            <div class="pdf-section-title">شرایط پرداخت</div>
+            <div class="pdf-row">
+                <span style="color: #aaa;">مرحله اول (۳۳٪ - پیش‌پرداخت):</span>
+                <span id="pdf-pay1" style="color: #fff;">--</span>
+            </div>
+            <div class="pdf-row">
+                <span style="color: #aaa;">مرحله دوم (۳۳٪ - تایید مدل):</span>
+                <span id="pdf-pay2" style="color: #fff;">--</span>
+            </div>
+            <div class="pdf-row">
+                <span style="color: #aaa;">مرحله سوم (۳۴٪ - تحویل فایل):</span>
+                <span id="pdf-pay3" style="color: #fff;">--</span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 60px; text-align: center; font-size: 12px; color: #555; border-top: 1px solid #333; padding-top: 15px;">
+            این سند به صورت سیستمی تولید شده است و به منزله فاکتور نهایی نمی‌باشد.
+        </div>
+    </div>
+
+    <!-- Payment Terms Modal -->
+    <div id="paymentModal" class="modal-overlay">
+        <div class="modal-content relative">
+            <h3 class="text-xl font-medium text-white mb-6 text-center border-b border-neutral-800 pb-4">شرایط و مراحل پرداخت</h3>
+            
+            <div class="space-y-6 text-sm text-neutral-300">
+                <!-- Description Text -->
+                <p class="leading-relaxed text-justify bg-neutral-900/30 p-4 rounded border border-neutral-800/50">
+                    پرداخت هزینه پروژه به صورت <span class="text-white font-bold">سه مرحله‌ای</span> انجام می‌شود:
+                    <br><br>
+                    <span class="text-white block mb-1">۱. مرحله اول:</span> 
+                    بعد از جلسه اولیه و موقع ثبت سفارش.
+                    <br><br>
+                    <span class="text-white block mb-1">۲. مرحله دوم:</span> 
+                    بعد از اتمام مراحل مدل‌سازی.
+                    <br><br>
+                    <span class="text-white block mb-1">۳. مرحله سوم:</span> 
+                    در زمان تحویل نهایی فایل‌ها.
+                </p>
+
+                <!-- Live Numbers Block -->
+                <div class="bg-neutral-900/80 p-4 rounded border border-neutral-700">
+                     <!-- UPDATED: Changed Title -->
+                     <div class="flex justify-between items-center mb-4 text-xs text-neutral-500 uppercase tracking-wider border-b border-neutral-800 pb-2">
+                        <span>محاسبه پرداختی در هر مرحله (تومان)</span>
+                     </div>
+                     
+                     <!-- REMOVED: font-mono class -->
+                     <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-neutral-400 text-xs">مرحله اول (۳۳٪)</span>
+                            <span class="text-white text-sm" id="pay-1-popup">۰</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-neutral-400 text-xs">مرحله دوم (۳۳٪)</span>
+                            <span class="text-white text-sm" id="pay-2-popup">۰</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-neutral-400 text-xs">مرحله سوم (۳۴٪)</span>
+                            <span class="text-white text-sm" id="pay-3-popup">۰</span>
+                        </div>
+                     </div>
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <button onclick="closePaymentModal()" class="w-full btn-modal-edit py-3 rounded text-sm font-medium border border-neutral-700 hover:border-white hover:text-white hover:bg-neutral-800 transition-colors">متوجه شدم</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal-overlay">
+        <div class="modal-content relative">
+            <h3 class="text-xl font-medium text-white mb-6 text-center border-b border-neutral-800 pb-4">تایید و ارسال درخواست</h3>
+            
+            <div class="space-y-4 text-sm text-neutral-300">
+                <!-- Data Summary -->
+                <div class="bg-neutral-900/50 p-4 rounded border border-neutral-800">
+                    <div class="grid grid-cols-2 gap-y-3">
+                        <span class="text-neutral-500">نام برند:</span>
+                        <span class="text-white text-left dir-ltr" id="modal-brand">--</span>
+                        
+                        <span class="text-neutral-500">سفارش‌دهنده:</span>
+                        <span class="text-white text-left dir-ltr" id="modal-name">--</span>
+                        
+                        <span class="text-neutral-500">شماره تماس:</span>
+                        <span class="text-white text-left dir-ltr" id="modal-phone">--</span>
+                    </div>
+                </div>
+
+                <!-- Technical Specifications Block -->
+                <div class="bg-neutral-900/50 p-4 rounded border border-neutral-800 space-y-3">
+                    <div class="flex justify-between items-center text-xs">
+                         <span class="text-neutral-500">سطح مدل‌سازی:</span>
+                         <span class="text-white" id="modal-modeling">--</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                         <span class="text-neutral-500">تعداد فریم پایه:</span>
+                         <span class="text-white" id="modal-frames">--</span>
+                    </div>
+                    
+                    <div id="modal-addons-container" class="border-t border-neutral-800 pt-2 mt-2 hidden">
+                        <span class="text-neutral-500 text-xs block mb-2">جزئیات سفارش:</span>
+                        <ul class="space-y-2 text-xs text-white" id="modal-addons">
+                            <!-- Items inserted via JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-neutral-900/50 p-4 rounded border border-neutral-800">
+                     <span class="text-neutral-500 block mb-1">توضیحات:</span>
+                     <p class="text-white text-xs leading-relaxed" id="modal-desc">--</p>
+                </div>
+
+                <!-- Cost Summary & Payment Stages -->
+                <div class="mt-6 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-neutral-400">مبلغ کل برآورد:</span>
+                        <span class="text-lg text-white font-medium" id="modal-total">۰ تومان</span>
+                    </div>
+                    
+                    <div class="bg-neutral-900/50 p-4 rounded border border-neutral-800">
+                        <span class="text-neutral-500 text-xs block mb-3 border-b border-neutral-800 pb-2">مراحل پرداخت</span>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-neutral-800/50 p-2 rounded">
+                                <div class="text-[10px] text-neutral-500 mb-1">مرحله ۱</div>
+                                <div class="text-xs text-white" id="modal-pay1">۰</div>
+                            </div>
+                            <div class="bg-neutral-800/50 p-2 rounded">
+                                <div class="text-[10px] text-neutral-500 mb-1">مرحله ۲</div>
+                                <div class="text-xs text-white" id="modal-pay2">۰</div>
+                            </div>
+                            <div class="bg-neutral-800/50 p-2 rounded">
+                                <div class="text-[10px] text-neutral-500 mb-1">مرحله ۳</div>
+                                <div class="text-xs text-white" id="modal-pay3">۰</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ADDED: Disclaimer in Modal -->
+                <div class="mt-4 p-3 border border-neutral-800 rounded bg-neutral-900/30 text-[10px] text-neutral-500 text-center leading-relaxed">
+                    توجه: مبلغ فوق صرفاً یک برآورد اولیه بر اساس اطلاعات ورودی است. هزینه دقیق و نهایی پس از برگزاری جلسه مشاوره و بررسی تخصصی جزئیات پروژه تعیین و اعلام خواهد شد.
+                </div>
+            </div>
+
+            <!-- Buttons Grid -->
+            <div class="flex flex-col gap-3 mt-6">
+                <div class="flex gap-3">
+                    <button onclick="finalSubmit()" class="flex-1 btn-modal-confirm py-3 rounded text-sm font-medium">تایید و ارسال</button>
+                    <button onclick="closeModal()" class="flex-1 btn-modal-edit py-3 rounded text-sm font-medium">ویرایش</button>
+                </div>
+                <!-- UPDATED: Download as Image -->
+                <button onclick="downloadImage()" class="w-full btn-modal-download py-3 rounded text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    دانلود پیش‌فاکتور (تصویر)
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="main-content-wrapper">
         <div class="max-w-4xl mx-auto p-6 md:p-12">
             
-            <!-- Header & Logo (Centered, Spaced Out) -->
+            <!-- Header & Logo -->
             <header class="mb-10 border-b border-neutral-800 pb-6 text-center">
-                <h1 class="text-3xl md:text-5xl font-normal mb-1 logo-font">
-                    <span class="font-semibold text-white">aesthero</span><span class="text-neutral-500 font-light">studio</span>
+                <h1 class="text-3xl md:text-5xl font-normal mb-1 logo-font flex justify-center items-center" dir="ltr">
+                    <span class="font-semibold text-white">aesthero</span>
+                    <span class="text-neutral-500 font-light studio-text">studio</span>
                 </h1>
                 <p class="text-neutral-500 text-sm font-light mt-2">سیستم برآورد هزینه خدمات سه‌بعدی</p>
             </header>
@@ -147,22 +644,42 @@
                         <input type="text" id="brandName" class="studio-input w-full p-3 rounded-none text-sm" placeholder="نام برند شما">
                     </div>
                     <div>
-                        <label class="block text-sm text-neutral-400 mb-2 uppercase tracking-wider">نام سفارش‌دهنده</label>
+                        <!-- UPDATED: Added (الزامی) to label -->
+                        <label class="block text-sm text-neutral-400 mb-2 uppercase tracking-wider">نام سفارش‌دهنده (الزامی)</label>
                         <input type="text" id="clientName" class="studio-input w-full p-3 rounded-none text-sm" placeholder="آقای/خانم...">
                     </div>
                     <div>
                         <label class="block text-sm text-neutral-400 mb-2 uppercase tracking-wider">شماره تماس (الزامی)</label>
-                        <div class="flex gap-2" id="phoneContainer">
-                            <input type="tel" id="phoneNumber" class="studio-input w-2/3 p-3 rounded-none text-sm text-left" placeholder="۹۱۲۰۰۰۰۰۰۰">
-                            <select id="countryCode" class="studio-select p-3 rounded-none text-sm w-1/3 text-left">
-                                <option value="+98" selected>+98 (ایران)</option>
-                                <option value="+49">+49 (آلمان)</option>
-                                <option value="+374">+374 (ارمنستان)</option>
-                                <option value="+964">+964 (عراق)</option>
-                                <option value="+90">+90 (ترکیه)</option>
-                                <option value="+971">+971 (امارات)</option>
-                                <option value="+1">+1 (آمریکا)</option>
-                            </select>
+                        <div class="flex gap-2 relative" id="phoneContainer">
+                            <!-- Input width restored to w-[60%] -->
+                            <!-- Added dir="ltr" to input to ensure cursor behavior is somewhat predictable with numbers, though mixing RTL text might need dir="rtl" depending on preference. Using rtl for Persian numbers. -->
+                            <input type="text" inputmode="numeric" id="phoneNumber" class="studio-input w-[60%] p-3 rounded-none text-sm text-left" placeholder="۹۱۲۰۰۰۰۰۰۰" dir="ltr">
+                            
+                            <!-- Custom Select Wrapper width set to w-[40%] -->
+                            <div id="countryCodeWrapper" class="custom-select-wrapper w-[40%] flex items-center relative h-[48px]">
+                                <!-- Hidden Native Select for functionality -->
+                                <select id="countryCode" class="studio-select absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleCountryChange()">
+                                    <!-- Persian Digits for Values and Text -->
+                                    <option value="+98" selected>(ایران) +۹۸</option>
+                                    <option value="+49">(آلمان) +۴۹</option>
+                                    <option value="+374">(ارمنستان) +۳۷۴</option>
+                                    <option value="+964">(عراق) +۹۶۴</option>
+                                    <option value="+90">(ترکیه) +۹۰</option>
+                                    <option value="+971">(امارات) +۹۷۱</option>
+                                    <option value="+1">(آمریکا) +۱</option>
+                                </select>
+
+                                <!-- Display Layer (Behind Select) for Marquee effect -->
+                                <div class="absolute inset-0 flex items-center px-3 pointer-events-none overflow-hidden" style="direction: ltr;">
+                                    <div id="countryCodeDisplay" class="whitespace-nowrap text-sm text-white marquee-text" style="padding-right: 0px;">
+                                        (ایران) +۹۸
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Validation Message Container -->
+                        <div id="phoneErrorMsg" class="input-error-msg">
+                            فرمت شماره وارد شده صحیح نیست.
                         </div>
                     </div>
                 </div>
@@ -181,7 +698,6 @@
                         <span class="w-1 h-4 bg-white block"></span>
                         سطح مدل‌سازی و متریال
                     </h2>
-                    <!-- Help Icon with updated text -->
                     <div class="relative tooltip-trigger cursor-help group">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-neutral-500 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -213,32 +729,33 @@
                 <div class="flex items-center gap-3 mb-5">
                     <h2 class="text-sm font-medium text-white flex items-center gap-3">
                         <span class="w-1 h-4 bg-white block"></span>
-                        تعداد کل فریم‌ها (پایه: ۴.۷ میلیون تومان)
+                        تعداد کل تصاویر مورد نیاز (پایه: ۴.۷ میلیون تومان)
                     </h2>
+                    <!-- Updated Tooltip Text -->
                     <div class="relative tooltip-trigger cursor-help group">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-neutral-500 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <div class="tooltip-content absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-neutral-800 border border-neutral-700 p-3 rounded text-xs text-neutral-300 shadow-xl z-10 pointer-events-none">
-                            تعداد تصاویر نهایی رندر شده از زوایای مختلف محصول که نیاز دارید.
+                        <div class="tooltip-content absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-neutral-800 border border-neutral-700 p-3 rounded text-xs text-neutral-300 shadow-xl z-10 pointer-events-none">
+                            تعداد تصاویر نهایی رندر شده از زوایای مختلف محصول. برای داشتن یک پرزنت کامل و حرفه‌ای از محصول، معمولاً بین ۸ تا ۱۲ فریم پیشنهاد می‌شود.
                         </div>
                     </div>
                 </div>
 
                 <div class="bg-neutral-900/50 p-6 border border-neutral-800">
                     <div class="flex justify-between items-end mb-5">
-                        <span class="text-neutral-400 text-xs">تعداد فریم‌های نهایی درخواستی</span>
-                        <span class="text-4xl font-light text-white" id="frameDisplay">۸</span>
+                        <span class="text-neutral-400 text-xs">تعداد تصاویر رندر شده مورد نیاز</span>
+                        <span class="text-4xl font-light text-white" id="frameDisplay">۰</span>
                     </div>
-                    <input type="range" min="1" max="20" value="8" class="studio-slider mb-4" id="frameSlider" oninput="updateTotalFrames(this.value)">
+                    <input type="range" min="0" max="20" value="0" class="studio-slider mb-4" id="frameSlider" oninput="updateTotalFrames(this.value)">
                     <div class="flex justify-between text-[10px] text-neutral-600 uppercase tracking-widest">
-                        <span>۱ فریم</span>
+                        <span>۰ فریم</span>
                         <span>۲۰ فریم (حداکثر)</span>
                     </div>
                 </div>
             </section>
 
-            <!-- Add-ons Grid -->
+            <!-- Add-ons Grid (Reverted to simple layout) -->
             <section class="mb-8">
                 <div class="flex items-center gap-3 mb-5">
                     <h2 class="text-sm font-medium text-white flex items-center gap-3">
@@ -249,7 +766,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-neutral-500 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <div class="tooltip-content absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-neutral-800 border border-neutral-700 p-3 rounded text-xs text-neutral-300 shadow-xl z-10 pointer-events-none">
+                        <div class="tooltip-content absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-neutral-800 border border-neutral-700 p-3 rounded text-xs text-neutral-300 shadow-xl z-10 pointer-events-none">
                             ویژگی‌های خاص برای هر فریم. مثلاً اگر ۳ فریم با کیفیت ۸K می‌خواهید، در بخش رزولوشن عدد ۳ را وارد کنید.
                         </div>
                     </div>
@@ -326,56 +843,64 @@
                     </div>
 
                 </div>
+                
+                <!-- ADDED: Contact Email Section -->
+                <div class="mt-10 pt-8 border-t border-neutral-800 text-center">
+                    <!-- UPDATED: Text changed to just "مشاوره و سوالات" -->
+                    <p class="text-xs text-neutral-500 mb-2">مشاوره و سوالات</p>
+                    <a href="mailto:mehrdad.shiran@gmail.com" class="text-sm text-neutral-400 hover:text-white transition-colors dir-ltr inline-block font-mono tracking-wide">
+                        mehrdad.shiran@gmail.com
+                    </a>
+                </div>
+
+                <!-- Disclaimer in Main Page -->
+                <!-- CHANGED: Made text whiter/brighter (text-neutral-400, opacity-90) -->
+                <div class="mt-8 text-xs text-neutral-400 text-center leading-relaxed px-4 opacity-90">
+                    * توجه: مبلغ محاسبه شده صرفاً یک برآورد اولیه بر اساس اطلاعات ورودی است. هزینه دقیق و نهایی پس از برگزاری جلسه مشاوره و بررسی تخصصی جزئیات پروژه تعیین و اعلام خواهد شد.
+                </div>
             </section>
         </div>
     </div>
     
-    <!-- Sticky Footer with increased gap-8 -->
+    <!-- Sticky Footer -->
     <div class="fixed bottom-0 left-0 right-0 glass-footer z-50 p-4 md:p-6" id="sticky-footer">
-        <div class="max-w-4xl mx-auto flex justify-between items-center transition-all duration-500 ease-in-out gap-8">
+        <div class="max-w-4xl mx-auto flex justify-between items-center transition-all duration-500 ease-in-out gap-4 md:gap-8">
             
             <!-- Price Block -->
             <div class="flex-grow">
-                <div class="text-xs text-neutral-500 uppercase tracking-widest mb-1">مبلغ کل برآورد (تومان)</div>
-                <div class="text-3xl md:text-4xl font-light text-white tracking-tight leading-tight transition-all duration-500 ease-in-out" id="totalCostDisplay">۵۷,۶۰۰,۰۰۰</div>
+                <!-- UPDATED: Added Tooltip for Disclaimer -->
+                <div class="flex items-center gap-2 text-xs text-neutral-500 uppercase tracking-widest mb-1">
+                    <span>مبلغ کل برآورد (تومان)</span>
+                    <div class="relative tooltip-trigger cursor-help group">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-neutral-500 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <!-- Tooltip positioned above -->
+                        <div class="tooltip-content absolute bottom-full right-0 mb-3 w-64 bg-neutral-800 border border-neutral-700 p-3 rounded text-xs text-neutral-300 shadow-xl z-50 pointer-events-none text-right leading-relaxed">
+                            توجه: مبلغ محاسبه شده صرفاً یک برآورد اولیه بر اساس اطلاعات ورودی است. هزینه دقیق و نهایی پس از برگزاری جلسه مشاوره و بررسی تخصصی جزئیات پروژه تعیین و اعلام خواهد شد.
+                        </div>
+                    </div>
+                </div>
+                <div class="text-3xl md:text-4xl font-light text-white tracking-tight leading-tight transition-all duration-500 ease-in-out" id="totalCostDisplay">۲۰,۰۰۰,۰۰۰</div>
             </div>
 
-            <!-- Payment Schedule -->
-            <div class="hidden md:flex gap-8 text-xs text-neutral-400 border-r border-neutral-800 pr-8">
-                <div>
-                    <div class="text-neutral-600 mb-1">مرحله ۱ (۳۳٪)</div>
-                    <div class="text-white transition-all duration-500 ease-in-out" id="pay-1">۰</div>
+            <!-- Payment Terms Button -->
+            <button onclick="openPaymentModal()" class="h-14 group flex items-center gap-2 px-4 rounded-lg border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 hover:border-neutral-600 transition-all duration-300">
+                <div class="bg-neutral-800 p-1 rounded-full group-hover:bg-white group-hover:text-black transition-colors text-neutral-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                 </div>
-                <div>
-                    <div class="text-neutral-600 mb-1">مرحله ۲ (۳۳٪)</div>
-                    <div class="text-white transition-all duration-500 ease-in-out" id="pay-2">۰</div>
+                <div class="flex flex-col items-start">
+                    <span class="text-xs text-neutral-400 group-hover:text-white transition-colors">شرایط پرداخت</span>
+                    <span class="text-[10px] text-neutral-600 group-hover:text-neutral-400 transition-colors">مشاهده مراحل</span>
                 </div>
-                <div>
-                    <div class="text-neutral-600 mb-1">مرحله ۳ (۳۴٪)</div>
-                    <div class="text-white transition-all duration-500 ease-in-out" id="pay-3">۰</div>
-                </div>
-            </div>
+            </button>
 
-            <!-- Action Button: Removed ml-4 to rely on gap-8 -->
-            <button onclick="sendRequest()" id="send-request-button" class="w-auto px-8 min-w-[140px] btn-primary py-3 rounded text-sm font-medium tracking-wide">
+            <!-- Action Button -->
+            <button onclick="openModal()" id="send-request-button" class="h-14 w-auto px-6 md:px-8 min-w-[120px] md:min-w-[140px] btn-primary rounded text-sm font-medium tracking-wide flex items-center justify-center">
                 ارسال درخواست
             </button>
-        </div>
-
-        <!-- Mobile Payment Schedule -->
-        <div class="md:hidden mt-4 pt-4 border-t border-neutral-800 grid grid-cols-3 gap-2 text-xs">
-            <div>
-                <span class="text-neutral-500 block">مرحله ۱ (۳۳٪)</span>
-                <span class="text-white" id="pay-1-m">۰</span>
-            </div>
-            <div>
-                <span class="text-neutral-500 block">مرحله ۲ (۳۳٪)</span>
-                <span class="text-white" id="pay-2-m">۰</span>
-            </div>
-            <div>
-                <span class="text-neutral-500 block">مرحله ۳ (۳۴٪)</span>
-                <span class="text-white" id="pay-3-m">۰</span>
-            </div>
         </div>
     </div>
 
@@ -387,7 +912,7 @@
         let state = {
             modelingPrice: 20000000,
             modelingLabel: "متوسط",
-            totalFrames: 8,
+            totalFrames: 0, 
             counts: { res4k: 0, res8k: 0, comp: 0, fxLight: 0, fxHeavy: 0 }
         };
 
@@ -397,9 +922,94 @@
             return n.toString().replace(/\d/g, x => farsiDigits[x]);
         };
 
+        const toEnglishDigits = (str) => {
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return str.toString().replace(/[۰-۹]/g, x => persianDigits.indexOf(x));
+        };
+
         const formatMoneyFull = (n) => toPersianDigits(new Intl.NumberFormat('en-US').format(Math.round(n))) + ' تومان';
         const formatMoneyShort = (n) => toPersianDigits(new Intl.NumberFormat('en-US').format(Math.round(n))); 
         const getEl = (id) => document.getElementById(id);
+
+        // --- Validation Logic ---
+        
+        // Validation Rules (Regex based on English digits)
+        const countryRules = {
+            '+98': { regex: /^0?9\d{9}$/, hint: 'مثال: ۹۱۲۳۴۵۶۷۸۹ (۱۰ یا ۱۱ رقم)' }, // Iran
+            '+49': { regex: /^\d{10,11}$/, hint: '۱۰ یا ۱۱ رقم' }, // Germany
+            '+374': { regex: /^\d{8}$/, hint: '۸ رقم' }, // Armenia
+            '+964': { regex: /^\d{10}$/, hint: '۱۰ رقم' }, // Iraq
+            '+90': { regex: /^\d{10}$/, hint: '۱۰ رقم' }, // Turkey
+            '+971': { regex: /^\d{9}$/, hint: '۹ رقم' }, // UAE
+            '+1': { regex: /^\d{10}$/, hint: '۱۰ رقم' } // USA
+        };
+
+        function validatePhone() {
+            const phoneInput = getEl('phoneNumber');
+            const countrySelect = getEl('countryCode');
+            const errorMsg = getEl('phoneErrorMsg');
+            
+            const rawVal = phoneInput.value;
+            if (!rawVal) {
+                errorMsg.classList.remove('visible');
+                phoneInput.classList.remove('error-highlight'); // Remove glow if empty
+                return false; 
+            }
+
+            const englishVal = toEnglishDigits(rawVal); // Convert to English for regex check
+            const selectedCode = countrySelect.value;
+            const rule = countryRules[selectedCode];
+
+            if (rule && !rule.regex.test(englishVal)) {
+                errorMsg.innerText = `فرمت صحیح نیست. ${rule.hint}`;
+                errorMsg.classList.add('visible');
+                // Optional: Add visual error state to input directly?
+                // phoneInput.classList.add('border-red-500'); 
+                return false;
+            } else {
+                errorMsg.classList.remove('visible');
+                phoneInput.classList.remove('error-highlight');
+                return true;
+            }
+        }
+
+        function handleCountryChange() {
+            updateCountryDisplay();
+            validatePhone(); // Re-validate when country changes
+        }
+
+        // --- Marquee & Display Logic ---
+        function updateCountryDisplay() {
+            const select = getEl('countryCode');
+            const display = getEl('countryCodeDisplay');
+            const wrapper = getEl('countryCodeWrapper');
+            
+            if (!select || !display) return;
+
+            // Update text
+            const selectedOption = select.options[select.selectedIndex];
+            display.innerText = selectedOption.text;
+            
+            // Reset animation
+            display.classList.remove('scrolling');
+            display.style.transform = 'translateX(0)';
+            display.style.removeProperty('--scroll-diff');
+
+            // Check overflow
+            const containerWidth = display.parentElement.clientWidth; 
+            const textWidth = display.scrollWidth;
+
+            if (textWidth > containerWidth) {
+                const diff = containerWidth - textWidth; 
+                const paddedDiff = diff - 5; 
+
+                display.style.setProperty('--scroll-diff', `${paddedDiff}px`);
+                
+                setTimeout(() => {
+                    display.classList.add('scrolling');
+                }, 50);
+            }
+        }
 
         // --- Core Logic ---
         
@@ -425,13 +1035,9 @@
             const newVal = currentVal + change;
             if (newVal < 0) return;
 
-            // Composition Check (Cannot exceed totalFrames)
+            // Constraints
             if (type === 'comp' && newVal > state.totalFrames) return;
-
-            // Resolution Check (res4k + res8k <= totalFrames)
             if ((type === 'res4k' || type === 'res8k') && (newVal + (type === 'res4k' ? state.counts.res8k : state.counts.res4k) > state.totalFrames)) return;
-
-            // FX Check (fxLight + fxHeavy <= totalFrames)
             if ((type === 'fxLight' || type === 'fxHeavy') && (newVal + (type === 'fxLight' ? state.counts.fxHeavy : state.counts.fxLight) > state.totalFrames)) return;
 
             state.counts[type] = newVal;
@@ -455,10 +1061,10 @@
             }
 
             for (let key in state.counts) {
-                getEl(`val-${key}`).innerText = toPersianDigits(state.counts[key]);
+                if(getEl(`val-${key}`))
+                    getEl(`val-${key}`).innerText = toPersianDigits(state.counts[key]);
             }
             
-            // Ensure slider position is correct
             getEl('frameSlider').value = totalFrames;
         }
         
@@ -483,54 +1089,135 @@
             const pay2 = grandTotal * 0.33;
             const pay3 = grandTotal * 0.34;
 
-            // Update UI with Persian Digits
+            // Update UI
             getEl('totalCostDisplay').innerText = formatMoneyShort(grandTotal);
-            getEl('pay-1').innerText = formatMoneyFull(pay1);
-            getEl('pay-2').innerText = formatMoneyFull(pay2);
-            getEl('pay-3').innerText = formatMoneyFull(pay3);
-            getEl('pay-1-m').innerText = formatMoneyFull(pay1);
-            getEl('pay-2-m').innerText = formatMoneyFull(pay2);
-            getEl('pay-3-m').innerText = formatMoneyFull(pay3);
+            
+            if(getEl('pay-1-popup')) getEl('pay-1-popup').innerText = formatMoneyFull(pay1);
+            if(getEl('pay-2-popup')) getEl('pay-2-popup').innerText = formatMoneyFull(pay2);
+            if(getEl('pay-3-popup')) getEl('pay-3-popup').innerText = formatMoneyFull(pay3);
 
             return { grandTotal, baseRenderCost, cost4k, cost8k, costComp, costFxL, costFxH, pay1, pay2, pay3 };
         }
 
         // --- Validation UX Function ---
 
-        function showValidationFeedback() {
-            const phoneInput = getEl('phoneNumber');
+        // UPDATED: Now accepts elementId and custom message
+        function showValidationFeedback(elementId, message) {
+            const inputEl = getEl(elementId);
             const validationMsg = getEl('validationMessage');
             
-            // 1. Show the floating message
+            // Set dynamic message
+            if (message) validationMsg.innerText = message;
+            
             validationMsg.classList.add('active');
+            inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            inputEl.classList.add('error-highlight');
             
-            // 2. Scroll to the element smoothly
-            phoneInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-            // 3. Apply the highlight/glow effect
-            phoneInput.classList.add('error-highlight');
-            
-            // 4. Remove all visual cues after 3 seconds
             setTimeout(() => {
-                phoneInput.classList.remove('error-highlight');
+                inputEl.classList.remove('error-highlight');
                 validationMsg.classList.remove('active');
             }, 3000); 
         }
 
-        // --- Request Submission (Mailto) ---
+        // --- Modal & Submission Logic ---
+        
+        function openPaymentModal() {
+            calculate();
+            const modal = getEl('paymentModal');
+            if(modal) modal.classList.add('active');
+        }
 
-        function sendRequest() {
-            const phoneNumber = getEl('phoneNumber').value.trim();
+        function closePaymentModal() {
+            const modal = getEl('paymentModal');
+            if(modal) modal.classList.remove('active');
+        }
+        
+        function openModal() {
+            const clientNameVal = getEl('clientName').value.trim();
+            const phoneNumberVal = getEl('phoneNumber').value.trim();
             
-            if (!phoneNumber) {
-                showValidationFeedback();
+            // 1. Check Client Name
+            if (!clientNameVal) {
+                showValidationFeedback('clientName', 'لطفاً نام سفارش‌دهنده را وارد نمایید.');
                 return;
             }
 
+            // 2. Check Phone Number Presence
+            if (!phoneNumberVal) {
+                showValidationFeedback('phoneNumber', 'لطفاً شماره تماس خود را وارد نمایید.');
+                return;
+            }
+
+            // 3. Check Phone Number Format
+            if (!validatePhone()) {
+                showValidationFeedback('phoneNumber', 'لطفاً شماره تماس را با فرمت صحیح وارد کنید.');
+                return;
+            }
+
+            // Populate Modal Data
+            const data = calculate();
+            
+            const brand = getEl('brandName').value || "وارد نشده";
+            const client = getEl('clientName').value; 
+            const phoneCode = getEl('countryCode').value;
+            // Use Persian Digits in display
+            const fullPhone = `\u202D${toPersianDigits(phoneCode)} ${phoneNumberVal}\u202C`; 
+            const desc = getEl('productDesc').value || "وارد نشده";
+
+            getEl('modal-brand').innerText = brand;
+            getEl('modal-name').innerText = client;
+            getEl('modal-phone').innerText = fullPhone;
+            getEl('modal-desc').innerText = desc;
+
+            // New Data Populations
+            getEl('modal-modeling').innerText = `${state.modelingLabel} (${formatMoneyFull(state.modelingPrice)})`;
+            getEl('modal-frames').innerText = `${toPersianDigits(state.totalFrames)} فریم (${formatMoneyFull(data.baseRenderCost)})`;
+
+            // Populate Add-ons
+            const addonsContainer = getEl('modal-addons-container');
+            const addonsList = getEl('modal-addons');
+            addonsList.innerHTML = '';
+            
+            let hasAddons = false;
+            const addAddonItem = (label, count, price) => {
+                if (count > 0) {
+                    hasAddons = true;
+                    const li = document.createElement('li');
+                    li.className = "flex justify-between items-center";
+                    li.innerHTML = `<span>${label} (${toPersianDigits(count)})</span> <span class="text-neutral-400">${price}</span>`;
+                    addonsList.appendChild(li);
+                }
+            };
+
+            addAddonItem('چیدمان پیچیده', state.counts.comp, formatMoneyFull(data.costComp));
+            addAddonItem('رزولوشن 4K', state.counts.res4k, formatMoneyFull(data.cost4k));
+            addAddonItem('رزولوشن 8K', state.counts.res8k, formatMoneyFull(data.cost8k));
+            addAddonItem('FX سبک', state.counts.fxLight, formatMoneyFull(data.costFxL));
+            addAddonItem('FX سنگین', state.counts.fxHeavy, formatMoneyFull(data.costFxH));
+
+            if (hasAddons) {
+                addonsContainer.classList.remove('hidden');
+            } else {
+                addonsContainer.classList.add('hidden');
+            }
+
+            getEl('modal-total').innerText = formatMoneyFull(data.grandTotal);
+            getEl('modal-pay1').innerText = formatMoneyFull(data.pay1);
+            getEl('modal-pay2').innerText = formatMoneyFull(data.pay2);
+            getEl('modal-pay3').innerText = formatMoneyFull(data.pay3);
+
+            getEl('confirmationModal').classList.add('active');
+        }
+
+        function closeModal() {
+            getEl('confirmationModal').classList.remove('active');
+        }
+
+        function finalSubmit() {
+            const phoneNumber = getEl('phoneNumber').value.trim();
             const data = calculate();
             const date = new Date().toLocaleDateString('fa-IR');
             
-            // Collect all client data
             const brandName = getEl('brandName').value || "وارد نشده";
             const clientName = getEl('clientName').value || "وارد نشده";
             const phoneCode = getEl('countryCode').value;
@@ -539,44 +1226,136 @@
 
             const subject = `درخواست برآورد هزینه از ${brandName} - ${clientName}`;
 
-            // Build detailed text body
             const emailBody = `
-**درخواست جدید برآورد هزینه از استودیو aesthero**
+درخواست برآورد هزینه - استودیو aesthero
+--------------------------------------------------
+تاریخ: ${date}
 
-**تاریخ:** ${date}
+[ اطلاعات سفارش‌دهنده ]
+ نام برند: ${brandName}
+ نام سفارش‌دهنده: ${clientName}
+ شماره تماس: ${fullPhone}
 
---- اطلاعات سفارش‌دهنده ---
-* **نام برند:** ${brandName}
-* **نام سفارش‌دهنده:** ${clientName}
-* **شماره تماس:** ${fullPhone}
-* **نام محصول و توضیحات پروژه:**
+[ توضیحات پروژه ]
 ${projectDesc}
 
---- خلاصه هزینه (مبلغ کل: ${formatMoneyFull(data.grandTotal)}) ---
-* **سطح مدل‌سازی:** ${state.modelingLabel} (${formatMoneyFull(state.modelingPrice)})
-* **تعداد کل فریم (پایه):** ${state.totalFrames} فریم (${formatMoneyFull(data.baseRenderCost)})
+--------------------------------------------------
+خلاصه هزینه (مبلغ کل: ${formatMoneyFull(data.grandTotal)})
+--------------------------------------------------
+• سطح مدل‌سازی: ${state.modelingLabel} (${formatMoneyFull(state.modelingPrice)})
+• تعداد فریم نهایی: ${state.totalFrames} فریم (${formatMoneyFull(data.baseRenderCost)})
 
---- جزئیات سفارش ---
-* **چیدمان پیچیده (+۳۰٪):** ${toPersianDigits(state.counts.comp)} فریم (اضافه بها: ${formatMoneyFull(data.costComp)})
-* **رزولوشن 4K (+۱۵٪):** ${toPersianDigits(state.counts.res4k)} فریم (اضافه بها: ${formatMoneyFull(data.cost4k)})
-* **رزولوشن 8K (+۳۰٪):** ${toPersianDigits(state.counts.res8k)} فریم (اضافه بها: ${formatMoneyShort(data.cost8k)})
-* **FX سبک (+۳۰٪):** ${toPersianDigits(state.counts.fxLight)} فریم (اضافه بها: ${formatMoneyFull(data.costFxL)})
-* **FX سنگین (+۶۰٪):** ${toPersianDigits(state.counts.fxHeavy)} فریم (اضافه بها: ${formatMoneyFull(data.costFxH)})
+[ جزئیات افزوده ]
+• چیدمان پیچیده: ${toPersianDigits(state.counts.comp)} فریم
+• رزولوشن 4K: ${toPersianDigits(state.counts.res4k)} فریم
+• رزولوشن 8K: ${toPersianDigits(state.counts.res8k)} فریم
+• FX سبک: ${toPersianDigits(state.counts.fxLight)} فریم
+• FX سنگین: ${toPersianDigits(state.counts.fxHeavy)} فریم
 
---- شرایط پرداخت (تومان) ---
-* **مرحله اول (۳۳٪):** ${formatMoneyShort(data.pay1)}
-* **مرحله دوم (۳۳٪):** ${formatMoneyShort(data.pay2)}
-* **مرحله سوم (۳۴٪):** ${formatMoneyShort(data.pay3)}
+--------------------------------------------------
+شرایط پرداخت
+--------------------------------------------------
+۱. پیش‌پرداخت (۳۳٪): ${formatMoneyFull(data.pay1)}
+۲. پس از تایید مدل (۳۳٪): ${formatMoneyFull(data.pay2)}
+۳. تسویه نهایی (۳۴٪): ${formatMoneyFull(data.pay3)}
 
-لطفا این اطلاعات را بررسی کرده و برای تأیید ارسال نمایید.
+* این ایمیل به صورت خودکار توسط سیستم برآورد هزینه تولید شده است.
 `;
             
             const encodedBody = encodeURIComponent(emailBody);
             const encodedSubject = encodeURIComponent(subject);
-
             const mailtoLink = `mailto:${TARGET_EMAIL}?subject=${encodedSubject}&body=${encodedBody}`;
 
             window.open(mailtoLink, '_blank');
+            closeModal();
+        }
+
+        // --- NEW: Image Download Logic (html2canvas) ---
+        function downloadImage() {
+            // 1. Gather Data
+            const data = calculate();
+            const brand = getEl('brandName').value || "وارد نشده";
+            const client = getEl('clientName').value || "وارد نشده";
+            
+            // CHANGED: Convert Phone Code to Persian Digits
+            const rawPhoneCode = getEl('countryCode').value;
+            const phoneCode = toPersianDigits(rawPhoneCode); 
+            
+            const phoneNum = getEl('phoneNumber').value.trim();
+            // phoneNum is already converted to Persian in input event, but constructing full string
+            const fullPhone = phoneNum ? `\u202D${phoneCode} ${phoneNum}\u202C` : "وارد نشده";
+            
+            const desc = getEl('productDesc').value || "توضیحاتی وارد نشده است.";
+            const date = new Date().toLocaleDateString('fa-IR');
+
+            // 2. Populate Hidden Template
+            getEl('pdf-brand').innerText = brand;
+            getEl('pdf-client').innerText = client;
+            
+            // Remove LRO/PDF marks for the simple text node if needed, 
+            // but keeping them for direction safety is good. 
+            // However, html2canvas might render control chars weirdly? 
+            // Usually fine. Let's stick to the text content.
+            getEl('pdf-phone').innerText = fullPhone.replace(/[\u202D\u202C]/g, ''); // Clean for image
+            
+            getEl('pdf-date').innerText = date;
+            getEl('pdf-desc').innerText = desc;
+            
+            getEl('pdf-modeling').innerText = `${state.modelingLabel} (${formatMoneyFull(state.modelingPrice)})`;
+            getEl('pdf-frames').innerText = `${toPersianDigits(state.totalFrames)} فریم (${formatMoneyFull(data.baseRenderCost)})`;
+            getEl('pdf-total').innerText = formatMoneyFull(data.grandTotal);
+            
+            getEl('pdf-pay1').innerText = formatMoneyFull(data.pay1);
+            getEl('pdf-pay2').innerText = formatMoneyFull(data.pay2);
+            getEl('pdf-pay3').innerText = formatMoneyFull(data.pay3);
+
+            // Populate Add-ons
+            const pdfAddonsContainer = getEl('pdf-addons-container');
+            pdfAddonsContainer.innerHTML = '';
+            
+            const addPdfAddon = (label, count, price) => {
+                if (count > 0) {
+                    const div = document.createElement('div');
+                    div.className = 'pdf-row';
+                    div.style.color = '#555';
+                    div.innerHTML = `<span>• ${label} (${toPersianDigits(count)} فریم)</span> <span>${price}</span>`;
+                    pdfAddonsContainer.appendChild(div);
+                }
+            };
+            
+            addPdfAddon('چیدمان پیچیده', state.counts.comp, formatMoneyFull(data.costComp));
+            addPdfAddon('رزولوشن 4K', state.counts.res4k, formatMoneyFull(data.cost4k));
+            addPdfAddon('رزولوشن 8K', state.counts.res8k, formatMoneyFull(data.cost8k));
+            addPdfAddon('FX سبک', state.counts.fxLight, formatMoneyFull(data.costFxL));
+            addPdfAddon('FX سنگین', state.counts.fxHeavy, formatMoneyFull(data.costFxH));
+
+            // 3. Generate Image
+            const element = document.getElementById('pdf-template');
+            
+            // UPDATED: Filename Generation
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const filenameDate = `${yyyy}_${mm}_${dd}`;
+            
+            // html2canvas options
+            html2canvas(element, {
+                scale: 2, // Higher quality
+                useCORS: true,
+                // CHANGED: Background color for Dark Mode
+                backgroundColor: '#050505'
+            }).then(canvas => {
+                // Trigger download
+                const link = document.createElement('a');
+                // UPDATED: Filename
+                link.download = `aesthero-Pre-Invoice-${filenameDate}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            }).catch(err => {
+                console.error("Image generation failed:", err);
+                alert("خطا در تولید تصویر. لطفاً مجدداً تلاش کنید.");
+            });
         }
 
 
@@ -590,8 +1369,8 @@ ${projectDesc}
             let scrollThreshold;
             
             if (isLandscape) {
-                // Determine when to expand the vertical footer
-                scrollThreshold = mainContentWrapper.scrollHeight - mainContentWrapper.clientHeight - 100;
+                // Slightly adjusted for landscape as well
+                scrollThreshold = mainContentWrapper.scrollHeight - mainContentWrapper.clientHeight - 150;
                 
                 if (window.scrollY >= scrollThreshold) {
                     footer.classList.add('resize');
@@ -602,7 +1381,8 @@ ${projectDesc}
                 }
             } else {
                 // Determine when to expand the horizontal footer
-                scrollThreshold = document.body.scrollHeight - window.innerHeight - 200; 
+                // CHANGED: Increased offset from 200 to 500 to show button earlier
+                scrollThreshold = document.body.scrollHeight - window.innerHeight - 500; 
                 
                 if (window.scrollY >= scrollThreshold) {
                     footer.classList.add('resize');
@@ -615,12 +1395,62 @@ ${projectDesc}
 
         // --- Init ---
         window.addEventListener('scroll', handleScroll);
-        window.addEventListener('resize', handleScroll); 
+        window.addEventListener('resize', () => {
+            handleScroll();
+            updateCountryDisplay();
+        }); 
         window.addEventListener('load', () => {
-             // Set initial values and styles
-             selectModel(20, document.querySelector('.select-card:nth-child(2)'));
+             const initialCard = document.querySelector('.select-card:nth-child(2)');
+             if(initialCard) selectModel(20, initialCard);
              calculate();
-             handleScroll(); 
+             handleScroll();
+             updateCountryDisplay();
+
+             // Phone Input Logic: Convert to Persian digits on input
+             const phoneInput = getEl('phoneNumber');
+             const phoneError = getEl('phoneErrorMsg');
+
+             if(phoneInput) {
+                 phoneInput.addEventListener('input', function(e) {
+                     let val = e.target.value;
+                     
+                     // 1. Clear error immediately when user starts typing/editing
+                     phoneError.classList.remove('visible');
+                     phoneInput.classList.remove('error-highlight');
+
+                     // 2. Convert digits logic
+                     const cleanVal = toEnglishDigits(val).replace(/\D/g, ''); 
+                     const persianVal = toPersianDigits(cleanVal);
+                     
+                     if (val !== persianVal) {
+                         e.target.value = persianVal;
+                     }
+                     // REMOVED: validatePhone() call from here so it doesn't show error while typing
+                 });
+
+                 // ADDED: Validate only when user leaves the field (Blur)
+                 phoneInput.addEventListener('blur', function() {
+                     validatePhone();
+                 });
+             }
+
+             const confirmModal = getEl('confirmationModal');
+             if (confirmModal) {
+                 confirmModal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeModal();
+                    }
+                });
+             }
+
+             const payModal = getEl('paymentModal');
+             if (payModal) {
+                 payModal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closePaymentModal();
+                    }
+                });
+             }
         });
 
     </script>
